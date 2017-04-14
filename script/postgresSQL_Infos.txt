@@ -1,0 +1,293 @@
+-rw-r--r--  1 root root  139004 Apr 13 10:46 pcm_dev.dump
+-rw-r--r--  1 root root  612721 Apr 13 10:46 pms_dev.dump
+[root@localhost ~]# history
+    1  ping www.baidu.com
+    2  shutdown -h now
+    3  ip add
+    4  cat /etc/yum.repos.d/CentOS-Base.repo 
+    5  setenforce 0
+    6  sed -i s/'SELINUX=enforcing'/'SELINUX=disabled'/g /etc/selinux/config
+    7  systemctl stop firewalld.service
+    8  systemctl disable firewalld.service
+    9  echo "* - nofile 65536" | tee -a /etc/security/limits.conf
+   10  echo "* - nproc  65536" | tee -a /etc/security/limits.conf 
+   11  sed -i /4096/d /etc/security/limits.d/20-nproc.conf
+   12  cat /etc/security/limits.d/20-nproc.conf
+   13  useradd wisdom
+   14  echo '1)]LZ?n-,yw3}Gi' | passwd --stdin wisdom
+   15  mkdir -p /mnt/{app,data,log,ops,web}
+   16  yum -y install epel-release
+   17  yum -y install gcc gcc-c++ make cmake bison libtool autoconf automake zip unzip bzip2 zlib zlib-devel openssl openssl-devel pcre pcre-devel bison-devel ncurses-devel tcl tcl-devel perl-Digest-SHA1 GeoIP GeoIP-devel gperftools gperftools-devel libatomic_ops-devel gtest gtest-devel glibc-devel unixODBC-devel
+   18  yum -y install git lftp ntpdate vim wget telnet dstat tree lrzsz net-tools
+   19  ulimit -a
+   20  shutdown -r now
+   21  ulimit -a
+   22  mkdir /mnt/ops/app
+   23  cd /mnt/ops/app/
+   24  rz
+   25  ls -l
+   26  ls
+   27  tar xzf nginx-1.10.2.tar.gz 
+   28  rm nginx-1.10.2 -rf
+   29  ls
+   30  useradd -s /sbin/nologin nginx
+   31  tar xzf nginx-1.10.2.tar.gz 
+   32  cd nginx-1.10.2
+   33  ./configure --prefix=/mnt/app/nginx --user=nginx --group=nginx --with-select_module --with-poll_module --with-threads --with-file-aio --with-http_ssl_module --with-http_stub_status_module --with-http_v2_module --with-http_realip_module --with-http_addition_module --with-http_geoip_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_auth_request_module --with-http_degradation_module --with-google_perftools_module --with-pcre --with-libatomic
+   34  make
+   35  make install
+   36  cd ..
+   37  mkdir -p /mnt/log/nginx
+   38  chown -R nginx.nginx /mnt/log/nginx
+   39  ls
+   40  cd
+   41  yum -y install gcc gcc-c++ make cmake bison libtool autoconf automake zip unzip bzip2 zlib zlib-devel openssl openssl-devel pcre pcre-devel bison-devel ncurses-devel tcl tcl-devel perl-Digest-SHA1 GeoIP GeoIP-devel gperftools gperftools-devel libatomic_ops-devel gtest gtest-devel glibc-devel unixODBC-devel fop
+   42  yum -y install gcc gcc-c++ make cmake bison libtool autoconf automake zip unzip bzip2 zlib zlib-devel openssl openssl-devel pcre pcre-devel bison-devel ncurses-devel tcl tcl-devel perl-Digest-SHA1 GeoIP GeoIP-devel gperftools gperftools-devel libatomic_ops-devel gtest gtest-devel glibc-devel unixODBC-devel fop libperl libpython readline readline-devel
+   43  yum -y install nmap-ncat
+   44  history |grep nginx
+   45  ls
+   46  ip add
+   47  cd /mnt/app/
+   48  ls
+   49  rm -rf *
+   50  ls
+   51  cd /mnt/ops/
+   52  ls
+   53  cd app/
+   54  ls
+   55  rm -rf *
+   56  rz
+   57  ls
+   58  tar xzf postgresql-9.6.1.tar.gz 
+   59  cd postgresql-9.6.1
+   60  ./configure --prefix=/mnt/app/pgsql
+   61  make
+   62  make install
+   63  cd contrib/
+   64  make install
+   65  echo 'export PGSQL_HOME=/mnt/app/pgsql' | tee /etc/profile.d/postgresql.sh
+   66  echo 'export PGSQL_BIN=${PGSQL_HOME}/bin' | tee -a /etc/profile.d/postgresql.sh
+   67  echo 'export PATH=${PGSQL_BIN}:$PATH' | tee -a /etc/profile.d/postgresql.sh   
+   68  source /etc/profile
+   69  mkdir -p /mnt/{data,log}/pgsql
+   70  chown -R wisdom.wisdom /mnt/{data,log}/pgsql
+   71  su - wisdom
+   72  cat >> /etc/sysctl.conf <<EOF
+   73  kernel.sem = 50100 128256000 50100 2560
+   74  EOF
+   75  su - wisdom
+   76  sysctl -p
+   77  su - wisdom
+   78  history
+   79  cd /mnt
+   80  ls
+   81  cd app
+   82  ls
+   83  cd pgsql/
+   84  ls
+   85  cd bin
+   86  ls
+   87  ./pgsql-D postgres
+   88  ./pgsql-d postgres
+   89  su - wsidom
+   90  cd
+   91  su - wisdom
+   92  netstat -lntp
+   93  su - wisdom
+   94  history
+   95  cd /etc/profile.d/
+   96  ls
+   97  ls -ll
+   98  cat which2.sh 
+   99  cat postgresql.sh 
+  100  cd /mnt/app/pgsql
+  101  ls
+  102  cd bin
+  103  ls
+  104  cd ..
+  105  ls
+  106  cd share/
+  107  ls
+  108  cd ..
+  109  ls
+  110  clear
+  111  netstat -ntlp
+  112  df -h
+  113  su - wisdom
+  114  exit
+  115  su - wisdom
+  116  history
+  117  su -  wisdom
+  118  su - wisdom
+  119  /mnt/app/pgsql/bin/psql -d postgres
+  120  cd /mnt
+  121  ls
+  122  /mnt/app/pgsql/bin/psql -d postgres
+  123  sudo su wisdom
+  124  /mnt/app/pgsql/bin/psql -d postgres
+  125  sudo su wisdom
+  126  /mnt/app/pgsql/bin/psql -d postgres
+  127  sudo su wisdom
+  128  ip a
+  129  vim /etc/sysconfig/network-scripts/ifcfg-eno16780032 
+  130  reboot
+  131  netstat -ntlp
+  132  whereis postgres
+  133  history
+  134  sudo su wisdom
+  135  /mnt/app/pgsql/bin/psql -d postgres
+  136  clear
+  137  netstat -ntlp
+  138  history
+  139  cd /mnt/app
+  140  ls
+  141  cd pgsql/
+  142  ls
+  143  cd bin
+  144  ls
+  145  pg_ctl start
+  146  pw
+  147  pwd
+  148  sudo su wisdom
+  149  yum install ansible
+  150  ansible --version
+  151  ssh-keygen
+  152  ssh-copy-id -i root@192.168.18.222
+  153  vi /etc/ansible/hosts
+  154  ssh-copy-id -i root@192.168.18.219
+  155  ansible -mping 'test-servers'
+  156  clear
+  157  ansible -mcommand -a "uptime" 'test-servers'
+  158  ansible -mcommand -a "uname -r" 'test-servers'
+  159  ansible -mcommand -a "useradd luke" 'test-servers'
+  160  ansible -mcommand -a "grep luke /etc/passwd" 'test-servers'
+  161  ansible -mcommand -a "df -Th" 'test-servers' > /tmp/command-output.txt
+  162  cat /tmp/command-output.txt
+  163  history
+  164  clear
+  165  ls
+  166  ll /mnt/
+  167  ll /mnt/app/pgsql/
+  168  ip add
+  169  netstat -lntup 
+  170  ll /usr/local/
+  171  ll /mnt/app/
+  172  netstat -lntup 
+  173  ip add
+  174  exit
+  175  cd /opt
+  176  ls
+  177  vim createuser.yml
+  178  pwd
+  179  cat /etc/ansible/hosts 
+  180  clear
+  181  vim createuser.yml
+  182  ansible-playbook createuser.yml  --extra-vars "user=software"
+  183  vim createuser.yml 
+  184  vim testserver.yml
+  185  ansible-playbook testserver.yml 
+  186  vim  testserver.yml 
+  187  cat /etc/ansible/hosts 
+  188  clear
+  189  vim testserver.yml 
+  190  ansible-playbook testserver.yml 
+  191  vim testserver.yml 
+  192  ansible-playbook testserver.yml 
+  193  clear
+  194  ansible-playbook createuser.yml 
+  195  vim createuser.yml 
+  196  ansible-playbook createuser.yml --extra-vars "user=abc"
+  197  clear
+  198  vim copytest.yml
+  199  clear
+  200  ls
+  201  ansible-playbook copytest.yml
+  202  cat /etc/ansible/hosts 
+  203  clear
+  204  ls
+  205  vim copytest.yml 
+  206  ansible-playbook copytest.yml
+  207  vim copytest.yml 
+  208  ansible-playbook copytest.yml
+  209  pwd
+  210  cd /tmp
+  211  ls
+  212  touch abc.txt
+  213  ls
+  214  cd /opt
+  215  ls
+  216  vim copytest.yml 
+  217  clear
+  218  ansible-playbook copytest.yml 
+  219  clear
+  220  ls
+  221  vim createuser.yml 
+  222  ansible-playbook createuser.yml --extra-vars "user=software"
+  223  clear
+  224  ls
+  225  vim pingserver.yml
+  226  ansible-playbook pingserver.yml 
+  227  vim pingserver.yml
+  228  vim testserver.yml 
+  229  vim pingserver.yml
+  230  vim testserver.yml 
+  231  vim pingserver.yml
+  232  ansible-playbook pingserver.yml 
+  233  vim pingserver.yml
+  234  ansible-playbook pingserver.yml 
+  235  clear
+  236  ls
+  237  netstat -ntlp
+  238  df -h
+  239  cd /opt
+  240  ls
+  241  history
+  242  vim /etc/sysconfig/network-scripts/ifcfg-eno16780032
+  243  cd /etc/sysconfig/network-scripts/
+  244  ls
+  245  sz ifcfg-eno16780032
+  246  ls
+  247  clear
+  248  ls
+  249  cd /opt
+  250  ls
+  251  sz copytest.yml
+  252  sz createuser.yml 
+  253  sz pingserver.yml 
+  254  sz testserver.yml 
+  255  ls
+  256  history
+  257  cat /mnt/data/pgsql/pg_hba.conf
+  258  history
+  259  chown -R wisdom.wisdom /mnt/{data,log}/pgsql
+  260  clear
+  261  su wisdom
+  262  /mnt/app/pgsql/bin/psql -d postgres
+  263  su wisdom
+  264  pg_dump -h 192.168.18.221 grp_dev -U wisdom --password -f grp_dev.dump
+  265  ls
+  266  ls -ll
+  267  pg_dump -h 192.168.18.221 pcm_dev -U wisdom --password -f pcm_dev.dump
+  268  pg_dump -h 192.168.18.221 pms_dev -U wisdom --password -f pms_dev.dump
+  269  pg_dump -h 192.168.18.221 jw_platform -U wisdom --password -f jw_platform.dump
+  270  clear
+  271  ls
+  272  ls -ll
+  273  history
+  274  pg_dump -h 192.168.18.221 jw_platform -U wisdom --password -f jw_platform.dump
+  275  rpm -qa |grep postgresql
+  276  su wisdom
+  277  ls
+  278  ls -ll
+  279  pg_restore --version
+  280  pg_restore -h 192.168.18.221 -p 5432 -U wisdom -W -d jw_platform -v "jw_platform.dump"
+  281  pg_dump -h localhost -p 5432 -U wisdom -W -F c -b -v -f "/home/root/grp_dev.backup" grp_dev
+  282  pg_dump -h localhost -p 5432 -U wisdom -W -F c -b -v -f "grp_dev.backup" grp_dev
+  283  ls
+  284  ls -ll
+  285  pg_restore -h localhost -p 5432 -U wisdom -W -d grp_dev -v "grp_dev.backup"
+  286  clear
+  287  ls
+  288  ls -ll
+  289  history
+[root@localhost ~]# 
