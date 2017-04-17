@@ -9,10 +9,7 @@ sudo apt-get remove libreoffice-common
 1
 sudo apt-get remove unity-webapps-common
  3.删掉基本不用的自带软件（用的时候再装也来得及）
-?
-1
-2
-3
+
 sudo apt-get remove thunderbird totem rhythmbox empathy brasero simple-scan gnome-mahjongg aisleriot gnome-mines cheese transmission-common gnome-orca webbrowser-app gnome-sudoku landscape-client-ui-install
 
 sudo apt-get remove onboard deja-dup

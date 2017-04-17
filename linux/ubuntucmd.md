@@ -81,12 +81,7 @@ sudo apt-get clean
 删除系统不再使用的孤立软件
 sudo apt-get autoremove　
 
-
-
-
-
 查看软件xxx安装内容
-
 dpkg -L xxx
 查找软件
 

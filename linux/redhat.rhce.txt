@@ -1,6 +1,6 @@
 
 
-rhce
+rhce http://www.cnblogs.com/whoisxiaoyan/p/5932614.html
 
 [kiosk@foundation0 ~]$ rht-vmctl start server
 [kiosk@foundation0 ~]$ rht-vmctl start desktop
@@ -8,7 +8,7 @@ rhce
 [kiosk@foundation0 ~]$ rht-vmctl fullreset desktop
 [kiosk@foundation0 ~]$ rht-vmctl poweroff server
 [kiosk@foundation0 ~]$ rht-vmctl poweroff desktop
-============================================================== 
+==============================================================
 中文输入：
 # yum -y install "ibus-table-chinese*"  "cjk*"  "*pinyin*"
 # reboot
@@ -49,14 +49,14 @@ SELINUX=enforcing
 # firewall-config
 # firewall-cmd --permanent --list-all
 public (default)
-  interfaces: 
-  sources: 
+  interfaces:
+  sources:
   services: dhcpv6-client ssh
-  ports: 
+  ports:
   masquerade: no
-  forward-ports: 
-  icmp-blocks: 
-  rich rules: 
+  forward-ports:
+  icmp-blocks:
+  rich rules:
 	rule family="ipv4" source address="172.24.3.0/24" service name="ssh" reject
 
 3. command alias
@@ -65,7 +65,7 @@ public (default)
 alias psnew='ps -Ao user,pid,ppid,command'
 
 # exit
-$ ssh -X root@server0 
+$ ssh -X root@server0
 # psnew
 
 4. samba1
@@ -158,7 +158,7 @@ Password: 						//自己的samba密码
 ==server==
 [root@server0 ~]# yum -y install nfs-utils
 [root@server0 ~]# mkdir /nfs1
-[root@server0 ~]# vim /etc/exports		
+[root@server0 ~]# vim /etc/exports
 /nfs1   172.25.0.0/24(ro,sync)				//共享及访问控制
 
 [root@server0 ~]# systemctl enable nfs-server.service 	//设置开机启动
@@ -184,7 +184,7 @@ server0:/nfs1   10473984 3188224   7285760  31% /mnt/nfs1
 //下载用于安全认证的keytab
 [root@server0 ~]# wget http://classroom.example.com/pub/keytabs/server0.keytab -O /etc/krb5.keytab
 
-[root@server0 ~]# vim /etc/sysconfig/nfs	
+[root@server0 ~]# vim /etc/sysconfig/nfs
 # Optional arguments passed to rpc.nfsd. See rpc.nfsd(8)
 RPCNFSDARGS="-V 4.2"					//定义NFS使用的协议版本4.2
 
@@ -192,13 +192,13 @@ RPCNFSDARGS="-V 4.2"					//定义NFS使用的协议版本4.2
 /nfs2   172.25.0.0/24(rw,sync,sec=krb5p)
 
 [root@server0 ~]# systemctl restart nfs-server.service 	//重启
-[root@server0 ~]# systemctl enable nfs-secure-server.service 
+[root@server0 ~]# systemctl enable nfs-secure-server.service
 [root@server0 ~]# systemctl restart nfs-secure-server.service
 
 ==desktop==
 [root@desktop0 ~]# wget http://classroom.example.com/pub/keytabs/desktop0.keytab -O /etc/krb5.keytab
 [root@desktop0 ~]# systemctl enable nfs-secure
-[root@desktop0 ~]# systemctl restart nfs-secure.service 
+[root@desktop0 ~]# systemctl restart nfs-secure.service
 
 [root@desktop0 ~]# mkdir /mnt/nfs2
 [root@desktop0 ~]# vim /etc/fstab
@@ -237,7 +237,7 @@ Rich Rules:
 
 
 [root@server0 ~]# firewall-cmd --permanent --list-all
-  rich rules: 
+  rich rules:
 	rule family="ipv4" source address="172.25.0.0/24" forward-port port="6666" protocol="tcp" to-port="22"
 
 ==desktop==
@@ -279,8 +279,8 @@ brw-rw----. 1 root disk 253, 17 Jul  8 18:25 /dev/vdb1
 
 b. 安装并共享
 [root@server0 ~]# yum -y install targetcli
-[root@server0 ~]# systemctl enable target.service 
-[root@server0 ~]# systemctl restart target.service 
+[root@server0 ~]# systemctl enable target.service
+[root@server0 ~]# systemctl restart target.service
 [root@server0 ~]# targetcli
 /> ls
 o- / ..................................................................... [...]
@@ -317,7 +317,7 @@ o- / ..................................................................... [...]
 /> /iscsi/iqn.2014-11.com.tianyun:server0/tpg1/acls create iqn.2014-11.com.tianyun:client1
 Created Node ACL for iqn.2014-11.com.tianyun:client1
 
-/> /iscsi/iqn.2014-11.com.tianyun:server0/tpg1/luns create /backstores/block/san10 
+/> /iscsi/iqn.2014-11.com.tianyun:server0/tpg1/luns create /backstores/block/san10
 Created LUN 0.
 Created LUN 0->0 mapping in node ACL iqn.2014-11.com.tianyun:client1
 
@@ -329,7 +329,7 @@ Created network portal 172.25.0.11:3260.
 
 c. firewall
 [root@server0 ~]# firewall-cmd --permanent --add-port=3260/tcp
-[root@server0 ~]# firewall-cmd --reload 
+[root@server0 ~]# firewall-cmd --reload
 
 
 ==desktop iscsi initiator==
@@ -337,7 +337,7 @@ c. firewall
 [root@desktop0 ~]# vim /etc/iscsi/initiatorname.iscsi		//使用授权访问的IQN
 InitiatorName=iqn.2014-11.com.tianyun:client1
 
-[root@desktop0 ~]# systemctl enable iscsid 
+[root@desktop0 ~]# systemctl enable iscsid
 [root@desktop0 ~]# systemctl restart iscsid
 
 [root@desktop0 ~]# iscsiadm -m discovery -t st -p server0	//发现 man iscsiadm (/EXAMPLES)
@@ -354,7 +354,7 @@ brw-rw----. 1 root disk 8, 1 Jul  8 18:50 /dev/sda1
 [root@desktop0 ~]# mkfs.ext4 /dev/sda1
 [root@desktop0 ~]# mkdir /mnt/iscsidisk
 [root@desktop0 ~]# blkid /dev/sda1				//获得UUID
-/dev/sda1: UUID="ccff941d-43eb-4059-84c8-f53ccec08a78" TYPE="ext4" 
+/dev/sda1: UUID="ccff941d-43eb-4059-84c8-f53ccec08a78" TYPE="ext4"
 
 [root@desktop0 ~]# vim /etc/fstab
 UUID="ccff941d-43eb-4059-84c8-f53ccec08a78" /mnt/iscsidisk ext4 defaults,_netdev 0 0
@@ -370,7 +370,7 @@ UUID="ccff941d-43eb-4059-84c8-f53ccec08a78" /mnt/iscsidisk ext4 defaults,_netdev
 [root@server0 ~]# yum -y install httpd mod_ssl mod_wsgi
 [root@server0 ~]# firewall-cmd --permanent --add-service=http		--80/tcp
 [root@server0 ~]# firewall-cmd --permanent --add-service=https		--443/tcp
-[root@server0 ~]# firewall-cmd --reload 
+[root@server0 ~]# firewall-cmd --reload
 
 [root@server0 ~]# wget http://classroom.example.com/pub/webs/www.html -O /var/www/html/index.html
 
@@ -388,8 +388,8 @@ UUID="ccff941d-43eb-4059-84c8-f53ccec08a78" /mnt/iscsidisk ext4 defaults,_netdev
         </RequireAll>
 </Directory>
 
-[root@server0 conf.d]# systemctl enable httpd.service 
-[root@server0 conf.d]# systemctl restart httpd.service 
+[root@server0 conf.d]# systemctl enable httpd.service
+[root@server0 conf.d]# systemctl restart httpd.service
 
 
 14. https://www0.example.com
@@ -418,7 +418,7 @@ UUID="ccff941d-43eb-4059-84c8-f53ccec08a78" /mnt/iscsidisk ext4 defaults,_netdev
 [root@desktop0 ~]# wget http://classroom/pub/example-ca.crt
 [root@desktop0 ~]# firefox				//倒入CA证书
 
-https://www0.example.com 
+https://www0.example.com
 
 
 15. http://server0.example.com
@@ -435,7 +435,7 @@ https://www0.example.com
 </VirtualHost>
 
 <Directory /var/www/virtual>
-        Require all granted 
+        Require all granted
 </Directory>
 [root@server0 conf.d]# systemctl restart httpd.service
 
@@ -466,7 +466,7 @@ Listen 8888					//增加监听的端口
 [root@server0 conf.d]# systemctl restart httpd.service
 
 [root@server0 conf.d]# firewall-cmd --permanent --add-port=8888/tcp
-[root@server0 conf.d]# firewall-cmd --reload 
+[root@server0 conf.d]# firewall-cmd --reload
 
 TEST：
 http://webapp0.example.com:8888/
@@ -493,7 +493,7 @@ case "$1" in
 foo)
         echo "bar"
         ;;
-bar)    
+bar)
         echo "foo"
         ;;
 *)
@@ -504,7 +504,7 @@ esac
 bar
 [root@server0 ~]# /root/script1.sh bar
 foo
-[root@server0 ~]# /root/script1.sh 
+[root@server0 ~]# /root/script1.sh
 Usage /root/script1.sh xxx
 
 
@@ -544,7 +544,7 @@ do
         fi
 done
 
-[root@server0 ~]# chmod a+x /root/script2.sh 
+[root@server0 ~]# chmod a+x /root/script2.sh
 [root@server0 ~]# /root/script2.sh user.txt
 
 
@@ -552,23 +552,23 @@ done
 ==server==
 [root@server0 ~]# yum -y groupinstall mariadb mariadb-clients
 [root@server0 ~]# systemctl enable mariadb
-[root@server0 ~]# systemctl restart mariadb.service 
+[root@server0 ~]# systemctl restart mariadb.service
 
 [root@server0 ~]# firewall-cmd --permanent --add-service=mysql
-[root@server0 ~]# firewall-cmd --reload 
+[root@server0 ~]# firewall-cmd --reload
 
 [root@server0 ~]# mysql_secure_installation 			//提升安全
 Enter current password for root (enter for none): 		//没有密码，直接回车
 
-Set root password? [Y/n] 
+Set root password? [Y/n]
 
-Remove anonymous users? [Y/n] 
+Remove anonymous users? [Y/n]
 
-Disallow root login remotely? [Y/n] 
+Disallow root login remotely? [Y/n]
 
-Remove test database and access to it? [Y/n] 
+Remove test database and access to it? [Y/n]
 
-Reload privilege tables now? [Y/n] 
+Reload privilege tables now? [Y/n]
 
 
 [root@server0 ~]# mysql -uroot -ptianyun
@@ -645,28 +645,3 @@ MariaDB [Concats]> select * from employee;
 
 MariaDB [Concats]> insert into employee values(9,'zhuzhu',16,202);
 ERROR 1142 (42000): INSERT command denied to user 'Luigi'@'localhost' for table 'employee'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

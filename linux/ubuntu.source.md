@@ -7,13 +7,7 @@ sudo cp /etc/apt/sources.list /etc/apt/sources.list_backup
 sudo vim /etc/apt/sources.list
 
 3.删除文件内容，更换为以下内容（也可使用其他源）
-?
-1
-2
-3
-38
-39
-40
+
 deb http://mirrors.aliyun.com/ubuntu trusty main restricted
 deb-src http://mirrors.aliyun.com/ubuntu trusty main restricted
 
@@ -58,10 +52,8 @@ deb-src http://security.ubuntu.com/ubuntu trusty-security multiverse
 
 
 4.执行以下命令，刷新
-
 sudo apt-get clean
 sudo apt-get update
-
 
 
 重要的事情说三遍：配置好上网信息（ip，DNS等），电脑插上网线.....
