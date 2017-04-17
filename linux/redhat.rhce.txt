@@ -1,0 +1,672 @@
+
+
+rhce
+
+[kiosk@foundation0 ~]$ rht-vmctl start server
+[kiosk@foundation0 ~]$ rht-vmctl start desktop
+[kiosk@foundation0 ~]$ rht-vmctl fullreset server
+[kiosk@foundation0 ~]$ rht-vmctl fullreset desktop
+[kiosk@foundation0 ~]$ rht-vmctl poweroff server
+[kiosk@foundation0 ~]$ rht-vmctl poweroff desktop
+============================================================== 
+中文输入：
+# yum -y install "ibus-table-chinese*"  "cjk*"  "*pinyin*"
+# reboot
+# Settings -----> Region & Language -----> Input Sources -----> Chinese(Intelligent Pinyin)
+
+
+重要提示：
+1. fullreset 			//server,desktop
+2. lab nfskrb5 setup  		//server,desktop
+
+练习环境:
+serverX	 172.25.X.11
+desktopX 172.25.X.10
+root密码:redhat
+
+example.com: 172.25.X.0/24
+cracker.com: 172.24.3.0/24
+
+[kiosk@foundation0 ~]$ ssh -X root@server0
+[kiosk@foundation0 ~]$ ssh -X root@desktop0
+
+
+0. yum
+==server/desktop==
+# rm -rf /etc/yum.repos.d/*
+# yum-config-manager --add-repo="http://content.example.com/rhel7.0/x86_64/dvd"
+# vim /etc/yum.conf
+gpgcheck=0
+# yum -y install httpd
+
+1. SELinux
+==server/desktop==
+# vim /etc/sysconfig/selinux
+SELINUX=enforcing
+
+2. ssh access
+==server/desktop==
+# firewall-config
+# firewall-cmd --permanent --list-all
+public (default)
+  interfaces: 
+  sources: 
+  services: dhcpv6-client ssh
+  ports: 
+  masquerade: no
+  forward-ports: 
+  icmp-blocks: 
+  rich rules: 
+	rule family="ipv4" source address="172.24.3.0/24" service name="ssh" reject
+
+3. command alias
+==server/desktop==
+# vim /etc/bashrc
+alias psnew='ps -Ao user,pid,ppid,command'
+
+# exit
+$ ssh -X root@server0 
+# psnew
+
+4. samba1
+==server==
+[root@server0 ~]# yum -y install samba samba-client cifs-utils
+[root@server0 ~]# mkdir /smb1
+
+[root@server0 ~]# id ldapuser1
+uid=1701(ldapuser1) gid=1701(ldapuser1) groups=1701(ldapuser1)
+[root@server0 ~]# smbpasswd -a ldapuser1		//设置samba用户密码
+
+[root@server0 ~]# vim /etc/samba/smb.conf
+workgroup = STAFF
+[smb1]
+        path = /smb1
+        hosts allow = 172.25.0.0/24			//替换相应的网段172.25.X.0/24
+
+[root@server0 ~]# systemctl enable smb nmb		//设置开机启动
+[root@server0 ~]# systemctl restart smb nmb
+
+[root@server0 ~]# chcon -R -t samba_share_t /smb1	//设置SELinux权限
+
+[root@server0 ~]# firewall-config			//firewall
+[root@server0 ~]# firewall-cmd --permanent --list-all
+  services: dhcpv6-client samba ssh
+
+
+==desktop==
+[root@desktop0 ~]# yum -y install samba-client cifs-utils
+[root@desktop0 ~]# mkdir /mnt/smb1
+# mount -o user=ldapuser1,pass=tianyun //server0/smb1 /mnt/smb1	--手动
+[root@desktop0 ~]# vim /etc/fstab
+//server0/smb1  /mnt/smb1       cifs    defaults,user=ldapuser1,pass=tianyun 0 0
+
+[root@desktop0 ~]# mount -a
+[root@desktop0 ~]# df
+//server0/smb1  10473900 3187728   7286172  31% /mnt/smb1
+
+5. samba2
+==server==
+[root@server0 ~]# id ldapuser1
+uid=1701(ldapuser1) gid=1701(ldapuser1) groups=1701(ldapuser1)
+[root@server0 ~]# id ldapuser2
+uid=1702(ldapuser2) gid=1702(ldapuser2) groups=1702(ldapuser2)
+
+[root@server0 ~]# smbpasswd -a ldapuser1		//设置samba用户密码
+[root@server0 ~]# smbpasswd -a ldapuser2		//设置samba用户密码
+
+[root@server0 ~]# mkdir /smb2
+[root@server0 ~]# setfacl -m u:ldapuser2:rwx /smb2	//准备目录，设置权限
+
+[root@server0 ~]# vim /etc/samba/smb.conf		//配置共享
+[smb2]
+        path = /smb2
+        hosts allow = 172.25.0.0/24			//替换相应的网段172.25.X.0/24
+        valid users = ldapuser1,ldapuser2		//可以访问的用户（只读）
+        write list = ldapuser2				//可以写入的用户
+
+[root@server0 ~]# systemctl restart smb nmb		//重启服务
+
+[root@server0 ~]# chcon -R -t samba_share_t /smb2	//设置SELinux权限
+
+
+==desktop==
+[root@desktop0 ~]# mkdir /mnt/smb2
+[root@desktop0 ~]# vim /etc/fstab
+//server0/smb2  /mnt/smb2       cifs    defaults,multiuser,user=ldapuser1,pass=tianyun 0 0
+
+[root@desktop0 ~]# mount -a
+[root@desktop0 ~]# df
+//server0/smb1  10473900 3187728   7286172  31% /mnt/smb1
+//server0/smb2  10473900 3187728   7286172  31% /mnt/smb2
+
+测试：
+a. ldapuser1 读
+[root@desktop0 ~]# su - ldapuser1
+[ldapuser1@desktop0 ~]$ cifscreds add server0		//重新从samba服务器获得自己的访问凭据
+Password: 						//自己的samba密码
+[ldapuser1@desktop0 ~]$ cp -rf /etc/hosts /mnt/smb2
+cp: cannot create regular file ‘/mnt/smb2/hosts’: Permission denied
+
+b. ldapuser2 读写
+[root@desktop0 ~]# su - ldapuser2
+[ldapuser2@desktop0 ~]$ cifscreds add server0
+Password: 						//自己的samba密码
+[ldapuser2@desktop0 ~]$ cp -rf /etc/hosts /mnt/smb2
+
+
+6. nfs1
+==server==
+[root@server0 ~]# yum -y install nfs-utils
+[root@server0 ~]# mkdir /nfs1
+[root@server0 ~]# vim /etc/exports		
+/nfs1   172.25.0.0/24(ro,sync)				//共享及访问控制
+
+[root@server0 ~]# systemctl enable nfs-server.service 	//设置开机启动
+[root@server0 ~]# systemctl restart nfs-server.service 	//启动
+
+[root@server0 ~]# firewall-config			//firewall
+
+==desktop==
+[root@desktop0 ~]# yum -y install nfs-utils
+[root@desktop0 ~]# mkdir /mnt/nfs1
+[root@desktop0 ~]# vim /etc/fstab
+server0:/nfs1   /mnt/nfs1       nfs     defaults        0 0
+[root@desktop0 ~]# mount -a
+[root@desktop0 ~]# df
+server0:/nfs1   10473984 3188224   7285760  31% /mnt/nfs1
+
+
+7. secure nfs
+==server==
+[root@server0 ~]# mkdir -p /nfs2/private
+[root@server0 ~]# chown ldapuser5 /nfs2/private/
+
+//下载用于安全认证的keytab
+[root@server0 ~]# wget http://classroom.example.com/pub/keytabs/server0.keytab -O /etc/krb5.keytab
+
+[root@server0 ~]# vim /etc/sysconfig/nfs	
+# Optional arguments passed to rpc.nfsd. See rpc.nfsd(8)
+RPCNFSDARGS="-V 4.2"					//定义NFS使用的协议版本4.2
+
+[root@server0 ~]# vim /etc/exports			//共享
+/nfs2   172.25.0.0/24(rw,sync,sec=krb5p)
+
+[root@server0 ~]# systemctl restart nfs-server.service 	//重启
+[root@server0 ~]# systemctl enable nfs-secure-server.service 
+[root@server0 ~]# systemctl restart nfs-secure-server.service
+
+==desktop==
+[root@desktop0 ~]# wget http://classroom.example.com/pub/keytabs/desktop0.keytab -O /etc/krb5.keytab
+[root@desktop0 ~]# systemctl enable nfs-secure
+[root@desktop0 ~]# systemctl restart nfs-secure.service 
+
+[root@desktop0 ~]# mkdir /mnt/nfs2
+[root@desktop0 ~]# vim /etc/fstab
+server0:/nfs2   /mnt/nfs2       nfs     defaults,v4.2,sec=krb5p 0 0
+[root@desktop0 ~]# mount -a
+
+[root@desktop0 ~]# su - ldapuser5
+Creating home directory for ldapuser5.
+[ldapuser5@desktop0 ~]$ touch /mnt/nfs2/private/file1
+touch: cannot touch ‘/mnt/nfs2/private/file1’: Permission denied
+
+[ldapuser5@desktop0 ~]$ kinit 				//获得kerberos的凭据
+Password for ldapuser5@EXAMPLE.COM: 			//kerberos
+[ldapuser5@desktop0 ~]$ touch /mnt/nfs2/private/file1
+
+
+8. team
+==server/desktop==
+# nm-connection-editor
+Add----> Team
+
+JSON config:						//man teamd.conf (/EXAMPLES)
+{"runner":{"name":"activebackup"}}
+
+# ip a
+# teamdctl team0 stat
+# ping 192.168.0.1
+# nmcli connection up "Team connection 1"		//重新加载Team
+
+
+9. port forward
+==server==
+[root@server0 ~]# firewall-config
+
+Rich Rules:
+
+
+[root@server0 ~]# firewall-cmd --permanent --list-all
+  rich rules: 
+	rule family="ipv4" source address="172.25.0.0/24" forward-port port="6666" protocol="tcp" to-port="22"
+
+==desktop==
+[root@desktop0 ~]# ssh root@server0 -p 6666
+
+
+10. ipv6
+==server,desktop==
+# nm-connection-editor
+# nmcli connection up "System eth0"
+# ip a
+
+[root@desktop0 ~]# ping6 2000:ac18::1205
+PING 2000:ac18::1205(2000:ac18::1205) 56 data bytes
+64 bytes from 2000:ac18::1205: icmp_seq=1 ttl=64 time=19.8 ms
+
+
+11. mail postfix null client
+==server,desktop==
+# vim /etc/postfix/main.cf
+relayhost = [smtp.example.com]
+myorigin =  example.com
+inet_interfaces = loopback-only
+mydestination =
+local_transport = error:local mail delivery is disabled
+# systemctl restart postfix.service
+
+[root@desktop0 ~]# vim /usr/share/doc/postfix-2.10.1/README_FILES/STANDARD_CONFIGURATION_README
+
+
+12. iscsi
+==server iscsi target==
+a. 准备要通过iscsi共享的卷
+[root@server0 ~]# fdisk /dev/vdb			//1G分区
+[root@server0 ~]# partprobe /dev/vdb
+[root@server0 ~]# ll /dev/vdb*
+brw-rw----. 1 root disk 253, 16 Jul  8 18:25 /dev/vdb
+brw-rw----. 1 root disk 253, 17 Jul  8 18:25 /dev/vdb1
+
+b. 安装并共享
+[root@server0 ~]# yum -y install targetcli
+[root@server0 ~]# systemctl enable target.service 
+[root@server0 ~]# systemctl restart target.service 
+[root@server0 ~]# targetcli
+/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- block .............................................. [Storage Objects: 0]
+  | o- fileio ............................................. [Storage Objects: 0]
+  | o- pscsi .............................................. [Storage Objects: 0]
+  | o- ramdisk ............................................ [Storage Objects: 0]
+  o- iscsi ........................................................ [Targets: 0]
+  o- loopback ..................................................... [Targets: 0]
+/> /backstores/block create san10 /dev/vdb1
+Created block storage object san10 using /dev/vdb1.
+
+/> /iscsi create iqn.2014-11.com.tianyun:server0
+Created target iqn.2014-11.com.tianyun:server0.
+Created TPG 1.
+
+/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- block .............................................. [Storage Objects: 1]
+  | | o- san10 ..................... [/dev/vdb1 (1.0GiB) write-thru deactivated]
+  | o- fileio ............................................. [Storage Objects: 0]
+  | o- pscsi .............................................. [Storage Objects: 0]
+  | o- ramdisk ............................................ [Storage Objects: 0]
+  o- iscsi ........................................................ [Targets: 1]
+  | o- iqn.2014-11.com.tianyun:server0 ............................... [TPGs: 1]
+  |   o- tpg1 ........................................... [no-gen-acls, no-auth]
+  |     o- acls ...................................................... [ACLs: 0]
+  |     o- luns ...................................................... [LUNs: 0]
+  |     o- portals ................................................ [Portals: 0]
+  o- loopback ..................................................... [Targets: 0]
+
+/> /iscsi/iqn.2014-11.com.tianyun:server0/tpg1/acls create iqn.2014-11.com.tianyun:client1
+Created Node ACL for iqn.2014-11.com.tianyun:client1
+
+/> /iscsi/iqn.2014-11.com.tianyun:server0/tpg1/luns create /backstores/block/san10 
+Created LUN 0.
+Created LUN 0->0 mapping in node ACL iqn.2014-11.com.tianyun:client1
+
+/> /iscsi/iqn.2014-11.com.tianyun:server0/tpg1/portals create 172.25.0.11 3260		//本机IP
+Using default IP port 3260
+Created network portal 172.25.0.11:3260.
+
+/> saveconfig
+
+c. firewall
+[root@server0 ~]# firewall-cmd --permanent --add-port=3260/tcp
+[root@server0 ~]# firewall-cmd --reload 
+
+
+==desktop iscsi initiator==
+[root@desktop0 ~]# yum -y install iscsi*
+[root@desktop0 ~]# vim /etc/iscsi/initiatorname.iscsi		//使用授权访问的IQN
+InitiatorName=iqn.2014-11.com.tianyun:client1
+
+[root@desktop0 ~]# systemctl enable iscsid 
+[root@desktop0 ~]# systemctl restart iscsid
+
+[root@desktop0 ~]# iscsiadm -m discovery -t st -p server0	//发现 man iscsiadm (/EXAMPLES)
+172.25.0.11:3260,1 iqn.2014-11.com.tianyun:server0
+
+[root@desktop0 ~]# systemctl restart iscsi			//login发现的所有iqn
+[root@desktop0 ~]# systemctl enable iscsi
+
+[root@desktop0 ~]# fdisk /dev/sda				//对新设备分区
+[root@desktop0 ~]# partprobe /dev/sda
+[root@desktop0 ~]# ll /dev/sda*
+brw-rw----. 1 root disk 8, 0 Jul  8 18:50 /dev/sda
+brw-rw----. 1 root disk 8, 1 Jul  8 18:50 /dev/sda1
+[root@desktop0 ~]# mkfs.ext4 /dev/sda1
+[root@desktop0 ~]# mkdir /mnt/iscsidisk
+[root@desktop0 ~]# blkid /dev/sda1				//获得UUID
+/dev/sda1: UUID="ccff941d-43eb-4059-84c8-f53ccec08a78" TYPE="ext4" 
+
+[root@desktop0 ~]# vim /etc/fstab
+UUID="ccff941d-43eb-4059-84c8-f53ccec08a78" /mnt/iscsidisk ext4 defaults,_netdev 0 0
+
+[root@desktop0 ~]# mount -a
+[root@desktop0 ~]# df
+/dev/sda1         487634    2318    455620   1% /mnt/iscsidisk
+
+
+13. http://www0.example.com
+==server==
+注意： 未声明站点的主目录，可以自定义，默认/var/www/html
+[root@server0 ~]# yum -y install httpd mod_ssl mod_wsgi
+[root@server0 ~]# firewall-cmd --permanent --add-service=http		--80/tcp
+[root@server0 ~]# firewall-cmd --permanent --add-service=https		--443/tcp
+[root@server0 ~]# firewall-cmd --reload 
+
+[root@server0 ~]# wget http://classroom.example.com/pub/webs/www.html -O /var/www/html/index.html
+
+[root@server0 ~]# cd /etc/httpd/conf.d/
+[root@server0 conf.d]# vim www0.conf
+<VirtualHost *:80>
+        ServerName www0.example.com
+        DocumentRoot /var/www/html
+</VirtualHost>
+
+<Directory /var/www/html>
+        <RequireAll>
+                Require all granted
+                Require not ip 172.24.3.0/24
+        </RequireAll>
+</Directory>
+
+[root@server0 conf.d]# systemctl enable httpd.service 
+[root@server0 conf.d]# systemctl restart httpd.service 
+
+
+14. https://www0.example.com
+[root@server0 conf.d]# pwd
+/etc/httpd/conf.d
+
+[root@server0 conf.d]# wget http://classroom/pub/tls/certs/www0.crt	//证书
+[root@server0 conf.d]# wget http://classroom/pub/tls/private/www0.key	//私钥
+
+[root@server0 conf.d]# vim www0.conf					//增加
+<VirtualHost *:443>
+        ServerName www0.example.com
+        DocumentRoot /var/www/html
+
+        SSLEngine on
+        SSLCertificateFile /etc/httpd/conf.d/www0.crt
+        SSLCertificateKeyFile /etc/httpd/conf.d/www0.key
+</VirtualHost>
+[root@server0 conf.d]# systemctl restart httpd.service
+
+
+[root@server0 ~]# vim /etc/httpd/conf.d/ssl.conf	//参考文件
+
+
+测试【可选】
+[root@desktop0 ~]# wget http://classroom/pub/example-ca.crt
+[root@desktop0 ~]# firefox				//倒入CA证书
+
+https://www0.example.com 
+
+
+15. http://server0.example.com
+[root@server0 conf.d]# mkdir /var/www/virtual
+[root@server0 conf.d]# wget http://classroom.example.com/pub/webs/server.html -O /var/www/virtual/index.html
+
+[root@server0 conf.d]# pwd
+/etc/httpd/conf.d
+[root@server0 conf.d]# cp www0.conf server0.conf
+[root@server0 conf.d]# vim server0.conf
+<VirtualHost *:80>
+        ServerName server0.example.com
+        DocumentRoot /var/www/virtual
+</VirtualHost>
+
+<Directory /var/www/virtual>
+        Require all granted 
+</Directory>
+[root@server0 conf.d]# systemctl restart httpd.service
+
+
+16. http://webapp0.example.com:8888		//运行python应用
+[root@server0 conf.d]# yum -y install mod_wsgi
+[root@server0 conf.d]# mkdir /var/www/webapp
+[root@server0 conf.d]# wget http://classroom.example.com/pub/webs/webapp.wsgi -O /var/www/webapp/webapp.wsgi
+
+[root@server0 conf.d]# pwd
+/etc/httpd/conf.d
+[root@server0 conf.d]# cp server0.conf webapp0.conf
+[root@server0 conf.d]# vim webapp0.conf
+Listen 8888					//增加监听的端口
+<VirtualHost *:8888>
+        ServerName webapp0.example.com
+        WSGIScriptAlias / /var/www/webapp/webapp.wsgi
+</VirtualHost>
+
+<Directory /var/www/webapp>
+        Require all granted
+</Directory>
+
+[root@server0 conf.d]# systemctl restart httpd.service
+[root@server0 conf.d]# journalctl -xn		//查看报错日志
+
+[root@server0 conf.d]# semanage port -a -t  http_port_t -p tcp 8888
+[root@server0 conf.d]# systemctl restart httpd.service
+
+[root@server0 conf.d]# firewall-cmd --permanent --add-port=8888/tcp
+[root@server0 conf.d]# firewall-cmd --reload 
+
+TEST：
+http://webapp0.example.com:8888/
+
+
+17. http://server0.example.com/private
+[root@server0 conf.d]# mkdir /var/www/virtual/private
+[root@server0 conf.d]# wget http://classroom.example.com/pub/webs/private.html -O /var/www/virtual/private/index.html
+
+[root@server0 conf.d]# vim server0.conf			//增加
+<Directory /var/www/virtual/private>
+        Require local
+</Directory>
+[root@server0 conf.d]# systemctl restart httpd.service
+
+http://server0.example.com				//任何主机都可以访问
+http://server0.example.com/private			//仅本机可以访问
+
+
+18. script1
+[root@server0 ~]# vim /root/script1.sh
+#!/bin/bash
+case "$1" in
+foo)
+        echo "bar"
+        ;;
+bar)    
+        echo "foo"
+        ;;
+*)
+        echo "Usage /root/script1.sh xxx"
+esac
+[root@server0 ~]# chmod a+x /root/script1.sh
+[root@server0 ~]# /root/script1.sh foo
+bar
+[root@server0 ~]# /root/script1.sh bar
+foo
+[root@server0 ~]# /root/script1.sh 
+Usage /root/script1.sh xxx
+
+
+19. script2
+[root@server0 ~]# vim user.txt 			//测试脚本的文件
+alice
+jack
+robin
+tom
+zhuzhu
+gougou
+
+[root@server0 ~]# vim /root/script2.sh
+#!/bin/bash
+#create users
+#判断是否有参数
+if [ $# -eq 0 ];then
+        echo "没有参数!"
+        exit 1
+fi
+
+#判断是否是文件
+if [ ! -f "$1" ];then
+        echo "不是文件!"
+        exit 2
+fi
+
+#创建用户
+for user in `cat $1`
+do
+        id $user &>/dev/null
+        if [ $? -eq 0 ];then
+                echo "用户$user已存在!"
+        else
+                useradd $user -s /bin/false
+                echo "用户$user创建成功..."
+        fi
+done
+
+[root@server0 ~]# chmod a+x /root/script2.sh 
+[root@server0 ~]# /root/script2.sh user.txt
+
+
+20. mariadb
+==server==
+[root@server0 ~]# yum -y groupinstall mariadb mariadb-clients
+[root@server0 ~]# systemctl enable mariadb
+[root@server0 ~]# systemctl restart mariadb.service 
+
+[root@server0 ~]# firewall-cmd --permanent --add-service=mysql
+[root@server0 ~]# firewall-cmd --reload 
+
+[root@server0 ~]# mysql_secure_installation 			//提升安全
+Enter current password for root (enter for none): 		//没有密码，直接回车
+
+Set root password? [Y/n] 
+
+Remove anonymous users? [Y/n] 
+
+Disallow root login remotely? [Y/n] 
+
+Remove test database and access to it? [Y/n] 
+
+Reload privilege tables now? [Y/n] 
+
+
+[root@server0 ~]# mysql -uroot -ptianyun
+MariaDB [(none)]> create database Concats;			//创建数据库
+Query OK, 1 row affected (0.00 sec)
+
+MariaDB [(none)]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| Concats            |
+| mysql              |
+| performance_schema |
++--------------------+
+4 rows in set (0.00 sec)
+
+MariaDB [(none)]> \q
+
+[root@server0 ~]# wget http://classroom.example.com/pub/mariadb/mariadb.dump
+[root@server0 ~]# mysql -uroot -ptianyun Concats < mariadb.dump	//导入表
+
+[root@server0 ~]# mysql -uroot -ptianyun
+MariaDB [(none)]> help grant
+MariaDB [(none)]> grant select on Concats.* to Luigi@localhost identified by 'tianyun';
+MariaDB [(none)]> flush privileges;
+
+
+测试：
+[root@server0 ~]# mysql -uLuigi -ptianyun
+MariaDB [(none)]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| Concats            |
++--------------------+
+2 rows in set (0.00 sec)
+
+MariaDB [(none)]> use Concats
+
+MariaDB [Concats]> show tables;
++-------------------+
+| Tables_in_Concats |
++-------------------+
+| department        |
+| employee          |
++-------------------+
+2 rows in set (0.00 sec)
+
+MariaDB [Concats]> desc employee;
++----------+-------------+------+-----+---------+----------------+
+| Field    | Type        | Null | Key | Default | Extra          |
++----------+-------------+------+-----+---------+----------------+
+| emp_id   | int(11)     | NO   | PRI | NULL    | auto_increment |
+| emp_name | varchar(50) | YES  |     | NULL    |                |
+| age      | int(11)     | YES  |     | NULL    |                |
+| dept_id  | int(11)     | YES  |     | NULL    |                |
++----------+-------------+------+-----+---------+----------------+
+4 rows in set (0.00 sec)
+
+MariaDB [Concats]> select * from employee;
++--------+----------+------+---------+
+| emp_id | emp_name | age  | dept_id |
++--------+----------+------+---------+
+|      1 | tianyun  |   19 |     200 |
+|      2 | tom      |   26 |     201 |
+|      3 | jack     |   30 |     201 |
+|      4 | alice    |   24 |     202 |
+|      5 | robin    |   40 |     200 |
+|      6 | natasha  |   28 |     204 |
++--------+----------+------+---------+
+6 rows in set (0.00 sec)
+
+MariaDB [Concats]> insert into employee values(9,'zhuzhu',16,202);
+ERROR 1142 (42000): INSERT command denied to user 'Luigi'@'localhost' for table 'employee'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

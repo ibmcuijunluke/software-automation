@@ -1,0 +1,266 @@
+
+
+RHCSA:
+
+[kiosk@foundation0 ~]$ rht-vmctl fullreset server
+[kiosk@foundation0 ~]$ rht-vmctl fullreset desktop
+[kiosk@foundation0 ~]$ rht-vmctl poweroff server
+
+===================================================================
+1. password,network
+e ----------> linux16    
+物理机： rd.break
+虚拟机： rd.break console=tty0
+
+ctrl + x
+
+switch_root:/# mount -o rw,remount /sysroot
+switch_root:/# chroot /sysroot
+sh-4.2# passwd 
+sh-4.2# touch /.autorelabel				//SELinux开启的情况下
+sh-4.2# exit
+switch_root:/# reboot
+
+# hostnamectl set-hostname server0.example.com
+
+# nm-connection-editor
+# nmcli connection up "System eth0"
+
+[kiosk@foundation0 Desktop]$ ssh -X root@server0	//从物理机远程操作
+
+2. SELinux
+[root@server0 ~]# vim /etc/sysconfig/selinux
+SELINUX=enforcing
+
+3. YUM
+[root@server0 ~]# rm -rf /etc/yum.repos.d/*
+[root@server0 ~]# yum-config-manager --add-repo="http://content.example.com/rhel7.0/x86_64/dvd"
+[root@server0 ~]# vim /etc/yum.conf
+gpgcheck=0						//取消签名检查
+
+[root@server0 ~]# yum repolist
+[root@server0 ~]# yum -y install chrony autofs
+
+4. LVM
+[root@server0 ~]# lab lvm setup				//准备练习环境
+
+[root@server0 ~]# lvscan 
+  ACTIVE            '/dev/finance/loans' [256.00 MiB] inherit
+[root@server0 ~]# vgs
+  VG      #PV #LV #SN Attr   VSize   VFree  
+  finance   1   1   0 wz--n- 508.00m 252.00m
+
+[root@server0 ~]# lvextend -L 302M /dev/finance/loans	//扩LVM
+[root@server0 ~]# df -T
+/dev/mapper/finance-loans xfs         258732   13268    245464   6% /finance/loans
+[root@server0 ~]# xfs_growfs /dev/finance/loans		//扩文件系统
+
+[root@server0 ~]# lvscan 
+  ACTIVE            '/dev/finance/loans' [304.00 MiB] inherit
+[root@server0 ~]# df -T
+/dev/mapper/finance-loans xfs         307884   13300    294584   5% /finance/loans
+
+5. user & group
+[root@server0 ~]# groupadd adminuser
+[root@server0 ~]# useradd natasha -G adminuser
+[root@server0 ~]# useradd harry -G adminuser
+[root@server0 ~]# useradd sarah -s /sbin/nologin 
+[root@server0 ~]# passwd natasha
+
+6. acl
+[root@server0 ~]# cp -rf /etc/fstab /var/tmp/
+[root@server0 ~]# ll /var/tmp/fstab 
+-rw-r--r--. 1 root root 368 Jul  6 23:27 /var/tmp/fstab
+
+[root@server0 ~]# setfacl -m u:natasha:rw /var/tmp/fstab 
+[root@server0 ~]# setfacl -m u:harry:- /var/tmp/fstab 
+
+[root@server0 ~]# getfacl /var/tmp/fstab 
+getfacl: Removing leading '/' from absolute path names
+# file: var/tmp/fstab
+# owner: root
+# group: root
+user::rw-
+user:natasha:rw-
+user:harry:---
+group::r--
+mask::rw-
+other::r--
+
+7. cron
+[root@server0 ~]# crontab -e -u natasha
+20 14 * * * /bin/echo hello
+
+[root@server0 ~]# crontab -l -u natasha
+20 14 * * * /bin/echo hello
+
+
+8. file per
+[root@server0 ~]# mkdir /home/admins
+[root@server0 ~]# chgrp adminuser /home/admins
+[root@server0 ~]# chmod 770 /home/admins
+[root@server0 ~]# chmod g+s /home/admins
+[root@server0 ~]# 
+[root@server0 ~]# ll -d /home/admins/
+drwxrws---. 2 root adminuser 6 Jul  6 23:30 /home/admins/
+
+
+9. update kernel
+[root@server0 ~]# yum-config-manager --add-repo="http://content.example.com/rhel7.0/x86_64/errata"
+[root@server0 ~]# yum list kernel 
+kernel.x86_64  3.10.0-123.el7       installed                                
+kernel.x86_64  3.10.0-123.1.2.el7   content.example.com_rhel7.0_x86_64_errata
+[root@server0 ~]# yum update kernel -y			//升级期间不能关闭终端
+
+10. ldap
+[root@server0 ~]# yum -y install openldap openldap-clients sssd authconfig-gtk
+[root@server0 ~]# yum -y install openldap openldap-clients sssd authconfig-gtk
+[root@server0 ~]# authconfig-gtk
+
+[root@server0 ~]# id ldapuser0				//获得ldap提供的用户
+uid=1700(ldapuser0) gid=1700(ldapuser0) groups=1700(ldapuser0)
+[root@server0 ~]# ssh ldapuser0@localhost		//使用ldap提供的用户登录本机
+ldapuser0@localhost's password: 			//考试时提供，此处为password
+Could not chdir to home directory /home/guests/ldapuser0: No such file or directory
+mkdir: cannot create directory ‘/home/guests’: Permission denied
+-bash-4.2$
+
+
+11. ntp
+[root@server0 ~]# yum -y install chrony			//NTP客户端
+[root@server0 ~]# vim /etc/chrony.conf
+server classroom.example.com iburst
+
+[root@server0 ~]# systemctl enable chronyd
+[root@server0 ~]# systemctl restart chronyd.service 
+
+[root@server0 ~]# timedatectl 
+      Local time: Mon 2015-07-06 23:40:10 CST
+  Universal time: Mon 2015-07-06 15:40:10 UTC
+        RTC time: Mon 2015-07-06 15:40:10
+        Timezone: Asia/Shanghai (CST, +0800)
+     NTP enabled: yes					//yes已开启
+NTP synchronized: no					//no未同步
+ RTC in local TZ: no
+      DST active: n/a
+
+12. autofs mount home
+通过前一步得到用户HOME： /home/guests/ldapuser0
+
+[root@server0 ~]# yum -y install autofs
+
+[root@server0 ~]# vim /etc/auto.master
+/home/guests /etc/auto.yangsheng			----- /home/guests/ 错误
+
+[root@server0 ~]# vim /etc/auto.yangsheng
+*       -rw     classroom.example.com:/home/guests/&
+
+[root@server0 ~]# systemctl enable autofs.service 
+[root@server0 ~]# systemctl restart autofs.service 
+
+[root@server0 ~]# ssh ldapuser0@localhost		//测试HOME挂载
+ldapuser0@localhost's password: 
+Last login: Mon Jul  6 23:50:13 2015 from localhost
+[ldapuser0@server0 ~]$ pwd
+/home/guests/ldapuser0
+
+13. user
+[root@server0 ~]# useradd jack -u 2000
+
+14. swap
+[root@server0 ~]# fdisk /dev/vdb			
+Command (m for help): n
+Partition type:
+   p   primary (1 primary, 0 extended, 3 free)
+   e   extended
+Select (default p): 
+Using default response p
+Partition number (2-4, default 2): 
+First sector (1050624-20971519, default 1050624): 
+Using default value 1050624
+Last sector, +sectors or +size{K,M,G} (1050624-20971519, default 20971519): +512M
+Partition 2 of type Linux and of size 512 MiB is set
+
+Command (m for help): w
+
+[root@server0 ~]# partprobe /dev/vdb
+[root@server0 ~]# ll /dev/vdb*
+brw-rw----. 1 root disk 252, 16 Jul  7 00:20 /dev/vdb
+brw-rw----. 1 root disk 252, 17 Jul  7 00:16 /dev/vdb1
+brw-rw----. 1 root disk 252, 18 Jul  7 00:21 /dev/vdb2
+
+[root@server0 ~]# mkswap /dev/vdb2
+Setting up swapspace version 1, size = 524284 KiB
+no label, UUID=e559e575-e01d-4e17-a1aa-5aaf8c5647ae
+
+[root@server0 ~]# vim /etc/fstab
+UUID=e559e575-e01d-4e17-a1aa-5aaf8c5647ae swap swap defaults 0 0
+
+[root@server0 ~]# swapon -a
+[root@server0 ~]# swapon -s
+Filename				Type		Size	Used	Priority
+/dev/vdb2                              	partition	524284	0	-1
+
+15. find
+[root@server0 ~]# mkdir /findfiles
+[root@server0 ~]# find / -name alice
+[root@server0 ~]# find / -name alice -exec  cp -a {} /findfiles  \;
+
+16. grep
+[root@server0 ~]# grep seismic /usr/share/dict/words
+[root@server0 ~]# grep seismic /usr/share/dict/words > /root/filelist
+
+17. tar
+[root@server0 ~]# tar -cjvf /root/backup.tar.bz2 /etc
+
+18. LVM
+[root@server0 ~]# fdisk /dev/vdb
+Command (m for help): n
+Partition type:
+   p   primary (2 primary, 0 extended, 2 free)
+   e   extended
+Select (default p): 
+Using default response p
+Partition number (3,4, default 3): 
+First sector (2099200-20971519, default 2099200): 
+Using default value 2099200
+Last sector, +sectors or +size{K,M,G} (2099200-20971519, default 20971519): +200M
+Partition 3 of type Linux and of size 200 MiB is set
+Command (m for help): w
+The partition table has been altered!
+
+[root@server0 ~]# partprobe /dev/vdb
+[root@server0 ~]# ll /dev/vdb*
+brw-rw----. 1 root disk 252, 16 Jul  7 00:31 /dev/vdb
+brw-rw----. 1 root disk 252, 17 Jul  7 00:16 /dev/vdb1
+brw-rw----. 1 root disk 252, 18 Jul  7 00:22 /dev/vdb2
+brw-rw----. 1 root disk 252, 19 Jul  7 00:31 /dev/vdb3
+
+[root@server0 ~]# pvcreate /dev/vdb3
+[root@server0 ~]# vgcreate -s 16M datastore /dev/vdb3		//-s指定PE size
+[root@server0 ~]# lvcreate -L 160M -n database datastore	//-l 10   PE 数量
+
+[root@server0 ~]# lvscan 
+  ACTIVE            '/dev/datastore/database' [160.00 MiB] inherit
+
+[root@server0 ~]# mkfs.ext4 /dev/datastore/database 
+[root@server0 ~]# mkdir /mnt/database
+/dev/datastore/database /mnt/database ext4 defaults 0 0
+
+
+[root@server0 ~]# mount -a
+[root@server0 ~]# df
+/dev/mapper/datastore-database    154565    1550    141547   2% /mnt/database
+
+
+
+
+
+
+
+
+
+
+
+
+
