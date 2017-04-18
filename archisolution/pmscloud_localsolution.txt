@@ -1,0 +1,36 @@
+#############PMS_CLoud_Local本地部署Solution Ready##################
+
+USB->CentOS Desktop HostOS ->KVM Configuration 配置 ->execute jw_hostos.sh  shell脚本.
+初始化 HostOS +KVM Environment (Network, IP  ,DNS, useful software etc) .
+USB > execute jw_mount.sh,> execute jw_import.sh  ,import KVM qemu Images,
+and Start all KVM VMs and all jw pms services .->  execute jw_healthcheck.sh ,
+and check all jwpmscloud service that is ok.
+具体实施步骤
+jw_hostos.sh
+jw_mount.sh
+jw_import.sh
+jw_healthcheck.sh
+===============================================================================
+PC Machine RAID 5 需要客户购买服务器的时候
+出厂需要设置好了RAID 5 3块143g的硬盘 大概做完300g磁盘空间
+
+1.PC Machine Ready 需要首先提供2台pc机器 2c 8g 500g
+2.USB verification   centos usb镜像的制作和打包
+3.VM pms local architecture  本地部署的架构部署  2个要求 高可用和不改开发代码。
+  目前计划postgres 那个vm 100g硬盘 其他到底用几个虚拟机 再tbd
+
+4.HOSTOS,KVM,PmsService HA 主机os  kvm  pms所有服务的高可用
+
+5.Monitor and Ops PMS service 监控 pms所有服务 kvm 和centos 的服务可用
+
+6.Saltstack healthcheck Scripts and check all pms service 自动化的Saltstack的健康检查 和check
+7.log file crontab del and DB Master -Master sychnized log文件定时删除 只保留7days的日至信息  db 数据库的保留 保留7days
+8.Deployer and Customer Training 实施工程师 和 客户的培训
+9. Database Restore 数据库的恢复方案
+10. HostOS Restore, customer need purchase our engineer service.主机的恢复方案，需要购买我们实施服务。
+
+
+POC Demo
+Image IOS and USB Device Make
+Goto Customer
+===============================================================================

@@ -1,0 +1,49 @@
+# Copyright (c) 1993-2009 Microsoft Corp.
+#
+# This is a sample HOSTS file used by Microsoft TCP/IP for Windows.
+#
+# This file contains the mappings of IP addresses to host names. Each
+# entry should be kept on an individual line. The IP address should
+# be placed in the first column followed by the corresponding host name.
+# The IP address and the host name should be separated by at least one
+# space.
+#
+# Additionally, comments (such as these) may be inserted on individual
+# lines or following the machine name denoted by a '#' symbol.
+#
+# For example:
+#
+#      102.54.94.97     rhino.acme.com          # source server
+#       38.25.63.10     x.acme.com              # x client host
+
+# localhost name resolution is handled within DNS itself.
+#	127.0.0.1       localhost
+#	::1             localhost
+
+192.168.18.217  18-217.jointwisdom.cn
+192.168.18.223  java.test.com  pms.test.com
+
+127.0.0.1 localhost
+#192.168.18.224  java.test.com
+#192.168.18.223  pms.test.com
+127.0.0.1 localhost
+
+192.168.18.209 redisCluster
+192.168.18.200 dbCluster
+192.168.18.201 dbClusterRead
+#192.168.18.203 zk1
+#192.168.18.202 zk2
+#192.168.18.208 zk3
+192.168.18.211 mqCluster
+
+192.168.18.204 kafka1
+192.168.18.205 kafka2
+
+192.168.18.206 postgreMaster
+192.168.18.207 postgreSlave
+
+192.168.18.215 mycat1
+192.168.18.216 mycat2
+
+192.168.18.218 rocketmq1
+192.168.18.219 rocketmq2
